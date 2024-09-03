@@ -1,7 +1,7 @@
-Compilador SIMPLE
+#Compilador SIMPLE
 O Compilador SIMPLE é um projeto desenvolvido em PHP que visa treinar e demonstrar as principais etapas do processo de compilação. Este compilador é uma ferramenta educacional que ilustra como um código fonte é transformado em código executável por meio de várias fases de análise.
 
-Etapas do Processo de Compilação
+#Etapas do Processo de Compilação
 1. Análise Léxica
 A análise léxica, também conhecida como scanner ou tokenização, é a primeira fase do processo de compilação. O objetivo desta fase é ler o código fonte e dividi-lo em unidades menores chamadas tokens. Esses tokens são as menores partes significativas da linguagem, incluindo palavras-chave, identificadores, operadores e símbolos.
 
