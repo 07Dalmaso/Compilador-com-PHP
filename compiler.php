@@ -26,7 +26,7 @@ class Compiler {
                 $counter++;
             }
 
-            // Parsing
+            // Análise Sintática
             echo "\nInício da análise sintática (Parsing)\n";
 
             
@@ -38,7 +38,7 @@ class Compiler {
                 $parser->parseProgram(); 
                 echo "\nParsing concluído com sucesso.\n";
             } catch (Exception $e) {
-                echo "\nErro de análise sintática: " . $e->getMessage() . "\n";
+                echo "\n" . $e->getMessage() . "\n";
             }
 
         } else {
