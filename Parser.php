@@ -3,11 +3,12 @@
 /**
  * Classe responsável pela análise da Gramática Livre do Contexto:
  * 
- * A -> A + A | A - A | A * A | A / A | A % A | ( A ) | id | num
+ * A -> A + A | A - A | A * A | A / A | A % A | id | num
  * B -> A = A | A != A | A < A | A > A | A <= A | A >= A
  * IO -> "input" id | "print" A
  * Assign -> "let" id "=" A
  * GotoStmt -> "if" B "goto" num
+ * Rem -> "rem" ... LF
  * Stmt -> IO | Assign | GotoStmt | "end"
  * Tag -> num Stmt
  * Program -> Tag
@@ -35,6 +36,19 @@ class Parser
         } else {
             echo "End of input reached.\n";
             return null;
+        }
+    }
+
+    // Escreve a mensagem de erro
+    private function throwError($message)
+    {
+        $currentToken = $this->getCurrentToken();
+        if ($currentToken !== null) {
+            $line = $currentToken->getLine();
+            $column = $currentToken->getColumn();
+            throw new Exception("Erro de sintaxe: $message (linha: $line, índice: $column)");
+        } else {
+            throw new Exception("Erro de sintaxe: $message (token não encontrado)");
         }
     }
 
@@ -83,7 +97,13 @@ class Parser
         echo "Starting to parse program...\n";
         while (!$this->isEndOfInput()) {
             $this->skipLineFeeds();
+    
             if (!$this->isEndOfInput()) {
+                $currentToken = $this->getCurrentToken();
+                if ($currentToken->getType()->getUid() === Symbol::END) {
+                    echo "End encontrado, finalizando o parser.\n";
+                    break; 
+                }
                 $this->parseTag();
             }
         }
@@ -101,11 +121,11 @@ class Parser
             $this->advanceToken();
             $this->parseStmt();
         } else {
-            throw new Exception("Erro de sintaxe: Esperado número de linha. Token encontrado: " . $currentToken);
+            $this->throwError("Esperado número de linha. Token encontrado: " . $currentToken);
         }
     }
 
-    // Analisando Declaração (Stmt -> IO | Assign | GotoStmt | end)
+    // Analisando Declaração (Stmt -> IO | Assign | GotoStmt | rem | end)
     private function parseStmt()
     {
         $currentToken = $this->getCurrentToken();
@@ -128,13 +148,18 @@ class Parser
                 $this->parseGotoStmt();
                 break;
 
+            case Symbol::REM:
+                echo "Found rem statement.\n";
+                $this->parseRem();
+                break;
+
             case Symbol::END:
                 echo "Found 'end' statement.\n";
-                $this->advanceToken();
+                return;
                 break;
 
             default:
-                throw new Exception("Erro de sintaxe: Declaração inesperada. Token encontrado: " . $currentToken);
+                $this->throwError("Declaração inesperada. Token encontrado: " . $currentToken);
         }
     }
 
@@ -151,14 +176,14 @@ class Parser
                 echo "Identifier found for input statement.\n";
                 $this->advanceToken();
             } else {
-                throw new Exception("Erro de sintaxe: Esperado um identificador após 'input'.");
+                $this->throwError("Esperado um identificador após 'input'.");
             }
         } elseif ($currentToken->getType()->getUid() === Symbol::PRINT) {
             echo "Parsing 'print' statement.\n";
             $this->advanceToken();
             $this->parseA();
         } else {
-            throw new Exception("Erro de sintaxe na declaração de IO.");
+            $this->throwError("Erro de sintaxe na declaração de IO.");
         }
     }
 
@@ -179,10 +204,10 @@ class Parser
                 $this->advanceToken();
                 $this->parseA();
             } else {
-                throw new Exception("Erro de sintaxe: Esperado '=' na atribuição.");
+                $this->throwError("Esperado '=' na atribuição.");
             }
         } else {
-            throw new Exception("Erro de sintaxe: Esperado identificador após 'let'.");
+            $this->throwError("Esperado identificador após 'let'.");
         }
     }
 
@@ -203,20 +228,77 @@ class Parser
                 echo "Line number found for goto.\n";
                 $this->advanceToken();
             } else {
-                throw new Exception("Erro de sintaxe: Esperado número de linha após 'goto'.");
+                $this->throwError("Esperado número de linha após 'goto'.");
             }
         } else {
-            throw new Exception("Erro de sintaxe: Esperado 'goto'.");
+            $this->throwError("Esperado 'goto'.");
         }
+    }
+
+    // Analisando Rem (Rem -> "rem" ... LF)
+    private function parseRem()
+    {
+        echo "Parsing 'rem', skipping until LF.\n";
+        while(!$this->isEndOfInput() && $this->getCurrentToken()->getType()->getUid() !== Symbol::LF) {
+            $this->advanceToken();
+        }
+        $this->skipLineFeeds();
     }
 
     // Analisando Expressões Aritméticas (A)
     private function parseA()
     {
         echo "Parsing arithmetic expression (A)...\n";
+        $this->parseAddSub(); // menor precedência
     }
 
-    // Analisando Expressões Booleanas (B)
+    // A -> A + A | A - A
+    private function parseAddSub()
+    {
+        $this->parseMulDivMod(); //segunda maior precedência
+
+        while (!$this->isEndOfInput()) {
+            $currentToken = $this->getCurrentToken();
+            if (in_array($currentToken->getType()->getUid(), [Symbol::ADD, Symbol::SUBTRACT])) {
+                echo "Found addition or subtraction operator: " . $currentToken->getType()->getUid() . "\n";
+                $this->advanceToken();  
+                $this->parseMulDivMod();
+            } else {
+                break;
+            }
+        }
+    }
+
+    // A -> A * A | A / A | A % A
+    private function parseMulDivMod()
+    {
+        $this->parseIdNum(); //maior precedência
+
+        while (!$this->isEndOfInput()) {
+            $currentToken = $this->getCurrentToken();
+            if (in_array($currentToken->getType()->getUid(), [Symbol::MULTIPLY, Symbol::DIVIDE, Symbol::MODULO])) {
+                echo "Found multiplication, division, or modulus operator: " . $currentToken->getType()->getUid() . "\n";
+                $this->advanceToken();
+                $this->parseIdNum(); 
+            } else {
+                break; 
+            }
+        }
+    }
+
+    // A -> id | num
+    private function parseIdNum()
+    {
+        $currentToken = $this->getCurrentToken();
+
+        if ($currentToken->getType()->getUid() === Symbol::VARIABLE || $currentToken->getType()->getUid() === Symbol::INTEGER) {
+            echo "Found identifier or number: " . $currentToken . "\n";
+            $this->advanceToken();
+        } else {
+            $this->throwError("Esperado identificador ou número.");
+        }
+    }
+  // Analisando Expressões Booleanas (B)
     private function parseB()
     {
         echo "Parsing boolean expression (B)...\n";
@@ -227,7 +309,7 @@ class Parser
             $this->advanceToken();
             $this->parseA();
         } else {
-            throw new Exception("Erro de sintaxe: Esperado operador de comparação.");
+            $this->throwError("Esperado operador de comparação.");
         }
     }
 }
