@@ -1,0 +1,12 @@
+10 input a
+15 if a <= 0 goto 55
+20 input b
+25 if b <= 0 goto 55
+30 if b == 0 goto 60
+35 let r = a % b
+40 let a = b
+45 let b = r
+50 goto 30
+55 let a = -1
+60 print a
+65 end
