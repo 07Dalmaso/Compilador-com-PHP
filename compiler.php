@@ -1,6 +1,11 @@
 <?php
+/**
+ * Autores: Lucas Santos Dalmaso e André Santoro
+ * Email's: lucassdalmaso25@gmail.com e andre
+ */
 require_once 'LexicalAnalysis.php';
 require_once 'Parser.php';
+require_once 'SemanticAnalysis.php';
 
 class Compiler {
     public static function main() {
@@ -8,12 +13,14 @@ class Compiler {
         $counter = 1;
 
         echo '<pre>';
-        echo "Início da análise léxica\n";
+        echo "=== Início da análise léxica ===\n";
 
         $lexical = new LexicalAnalysis();
-        $arquivo = 'codigo.txt';  
 
-        // Análise Léxica
+        # Arquivo com o código-fonte a ser analisado
+        $arquivo = 'codigo.txt';
+
+        # Análise Léxica
         if ($lexical->parser($arquivo)) {
             echo "\nTabela de Símbolos:\n";
             foreach ($lexical->getSymbolTable() as $key => $value) {
@@ -26,29 +33,36 @@ class Compiler {
                 $counter++;
             }
 
-            // Análise Sintática
-            echo "\nInício da análise sintática (Parsing)\n";
+            # Análise Sintática
+            echo "\n=== Início da análise sintática (Parsing) ===\n";
 
-            
             $tokens = $lexical->getTokens(); 
             $parser = new Parser($tokens);
 
-
             try {
                 $parser->parseProgram(); 
-                echo "\nParsing concluído com sucesso.\n";
+                echo "Parsing concluído com sucesso.\n";
             } catch (Exception $e) {
-                echo "\n" . $e->getMessage() . "\n";
+                echo $e->getMessage() . "\n";
             }
 
+            # Análise Semântica
+            echo "\n=== Início da análise semântica ===\n";
+            $semanticAnalysis = new SemanticAnalysis($lexical);
+            if($semanticAnalysis->analyze()){
+                echo "Análise semântica concluída com sucesso.\n";
+            } else {
+                echo "Erro durante a análise semântica.\n";
+            }
+            echo "=== Fim da análise semântica ===\n";
+
         } else {
-            echo "\nErro durante a análise léxica.\n";
+            echo "Erro durante a análise léxica.\n";
         }
 
-        echo "\nFim da análise léxica e sintática\n";
+        echo '</pre>';
     }
 }
 
 Compiler::main();
-
 ?>
