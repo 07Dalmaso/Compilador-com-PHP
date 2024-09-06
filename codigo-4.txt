@@ -1,0 +1,21 @@
+100 input n
+105 if n < 2 goto 190
+110 let s = 0
+115 let a = 1
+120 if n <= a goto 150
+125 let b = n % a
+130 if b != 0 goto 140
+135 let s = s + a
+140 let a = a + 1
+145 goto 120
+150 if n <= s goto 165
+155 let r = -1
+160 goto 195
+165 if n == s goto 180
+170 let r = 1
+175 goto 195
+180 let r = 0
+185 goto 195
+190 let r = -9
+195 print r
+200 end

@@ -247,7 +247,8 @@ class SemanticAnalysis
         return $symbol == Symbol::ADD ||
             $symbol == Symbol::SUBTRACT ||
             $symbol == Symbol::MULTIPLY ||
-            $symbol == Symbol::DIVIDE;
+            $symbol == Symbol::DIVIDE ||
+            $symbol == Symbol::MODULO;
     }
 
     /**

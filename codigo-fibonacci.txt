@@ -1,0 +1,14 @@
+10 input n
+15 if n <= 0 goto 65
+20 let a = 0
+25 let b = 1
+30 let s = 0
+35 if n == 0 goto 70
+40 let s = s + b
+45 let b = b + a
+50 let a = b - a
+55 let n = n - 1
+60 goto 35
+65 let s = -1
+70 print s
+75 end
