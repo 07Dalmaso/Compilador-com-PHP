@@ -1,6 +1,9 @@
 <?php
 
 /**
+ * Autores: Lucas Santos Dalmaso e André Santoro
+ * Email's: lucassdalmaso25@gmail.com e andre
+ * 
  * Classe responsável pela análise da Gramática Livre do Contexto:
  * 
  * A -> A + A | A - A | A * A | A / A | A % A | id | num

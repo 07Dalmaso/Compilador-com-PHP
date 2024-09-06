@@ -1,0 +1,19 @@
+10 input a
+15 input b
+20 input c
+25 if a < b goto 45
+30 let x = a
+35 let a = b
+40 let b = x
+45 if a < c goto 65
+50 let x = a
+55 let a = c
+60 let c = x
+65 if b < c goto 85
+70 let x = b
+75 let b = c
+80 let c = x
+85 print a
+90 print b
+95 print c
+99 end
