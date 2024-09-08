@@ -1,7 +1,7 @@
 10 input a
 15 input b
 20 input c
-25 if a < b goto 100
+25 if a < b goto 10
 30 let x = a
 35 let a = b + c
 40 let b = x

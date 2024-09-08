@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Classe para análise semântica de um código baseado em tokens.
  * 
@@ -21,19 +22,21 @@ class SemanticAnalysis
     private array $tokens;
     private int $tokenIndex = 0;
     public bool $end = false;
+    public $isPrint;
 
     /**
      * Construtor da classe SemanticAnalysis.
      *
      * @param LexicalAnalysis $lexicalAnalysis Análise lexical fornecida.
      */
-    public function __construct(LexicalAnalysis $lexicalAnalysis)
+    public function __construct(LexicalAnalysis $lexicalAnalysis, $isPrint)
     {
         $this->lexicalAnalysis = $lexicalAnalysis;
         $this->declaredVariables = [];
         $this->lineNumbers = [];
         $this->gotoTargets = [];
         $this->tokens = $lexicalAnalysis->getTokens();
+        $this->isPrint = $isPrint;
     }
 
     /**
@@ -41,23 +44,11 @@ class SemanticAnalysis
      */
     public function advanceToken()
     {
-        echo "Avançando token do índice " . $this->tokenIndex . "\n";
+        echo $this->isPrint ? "Avançando token do índice " . $this->tokenIndex . "\n" : "";
         if ($this->tokenIndex < count($this->tokens) - 1) {
             $this->tokenIndex++;
         } else {
             echo "Já no último token.\n";
-        }
-    }
-
-    private function skipToNextLine()
-    {
-        // Advance tokens until you reach a line feed (LF) or end of input
-        while ($this->tokenIndex < count($this->tokens) && $this->tokens[$this->tokenIndex]->getType()->getUid() !== Symbol::LF) {
-            $this->advanceToken();
-        }
-        // If there are line feeds, advance past them as well
-        if ($this->tokenIndex < count($this->tokens) && $this->tokens[$this->tokenIndex]->getType()->getUid() === Symbol::LF) {
-            $this->advanceToken();
         }
     }
 
@@ -70,39 +61,24 @@ class SemanticAnalysis
     {
         while ($this->tokenIndex < count($this->tokens)) {
             $currentToken = $this->tokens[$this->tokenIndex];
-            echo sprintf("Analisando token: %s", $currentToken) . PHP_EOL;
-    
-            if ($currentToken->getType()->getUid() === Symbol::ERROR) {
-                echo "Error token found, skipping this line.\n";
-                $this->skipToNextLine();
-                continue; 
-            }
-    
-            if ($currentToken->getType()->getUid() == Symbol::END) {
-                $this->end = true;
-                $this->advanceToken();
-                break;
-            }
-    
+            echo $this->isPrint ? sprintf("Analisando token: %s", $currentToken) . PHP_EOL : NULL;
+
+
             if ($currentToken->getType()->getUid() == Symbol::ETX) {
                 if (!$this->end) {
                     $this->addError("Falta o comando 'END' para o fechamento do código." . $this->getLineCollumn());
                 }
                 break;
             }
-          
+
             // Processar número da linha
             if (!$this->lineNumber($currentToken)) {
-                $this->skipToNextLine();  // Skip the line and continue
-                continue;
             }
-    
+
             // Processar comando
             if (!$this->command()) {
-                $this->skipToNextLine();  // Skip the line and continue
-                continue;
             }
-    
+
             if ($this->tokens[$this->tokenIndex]->getType()->getUid() == Symbol::LF) {
                 $this->advanceToken();
             }
@@ -164,19 +140,19 @@ class SemanticAnalysis
     private function command(): bool
     {
         $currentToken = $this->tokens[$this->tokenIndex];
-        echo sprintf("Analisando expressão semântica: %s", $currentToken->getType()->getUid()) . PHP_EOL;
+        echo $this->isPrint ? sprintf("Analisando expressão semântica: %s", $currentToken->getType()->getUid()) . PHP_EOL : '';
 
         switch ($currentToken->getType()->getUid()) {
             case Symbol::REM:
                 $this->advanceToken();
                 break;
             case Symbol::INPUT:
-                $this->advanceToken(); 
+                $this->advanceToken();
                 $this->declareVariable(array_search($this->tokens[$this->tokenIndex]->getAddress(), $this->lexicalAnalysis->getSymbolTable()));
                 $this->advanceToken();
                 break;
             case Symbol::LET:
-                $this->advanceToken(); 
+                $this->advanceToken();
                 if ($this->tokenIndex < count($this->tokens)) {
                     $this->declareVariable(array_search($this->tokens[$this->tokenIndex]->getAddress(), $this->lexicalAnalysis->getSymbolTable()));
 
@@ -194,13 +170,15 @@ class SemanticAnalysis
                     $this->tokenIndex < count($this->tokens) &&
                     $this->tokens[$this->tokenIndex]->getType()->getUid() == Symbol::GOTO
                 ) {
-                    $this->advanceToken(); 
+                    $this->advanceToken();
                     if (
                         $this->tokenIndex < count($this->tokens) &&
                         $this->tokens[$this->tokenIndex]->getType()->getUid() == Symbol::INTEGER
                     ) {
-                        $this->gotoTargets[] = (int)array_search($this->tokens[$this->tokenIndex]->getAddress(), $this->lexicalAnalysis->getSymbolTable());
-                        $this->advanceToken(); 
+                        $lineNumber = (int)array_search($this->tokens[$this->tokenIndex]->getAddress(), $this->lexicalAnalysis->getSymbolTable());
+                        $lineColumnInfo = $this->getLineCollumn(); 
+                        $this->gotoTargets[] = ['lineNumber' => $lineNumber, 'lineColumn' => $lineColumnInfo];
+                        $this->advanceToken();
                     } else {
                         $this->addError("Número de linha esperado após GOTO." . $this->getLineCollumn());
                         return false;
@@ -212,11 +190,10 @@ class SemanticAnalysis
                 break;
             case Symbol::GOTO:
                 $this->advanceToken();
-                if (
-                    $this->tokenIndex < count($this->tokens) &&
-                    $this->tokens[$this->tokenIndex]->getType()->getUid() == Symbol::INTEGER
-                ) {
-                    $this->gotoTargets[] = (int)array_search($this->tokens[$this->tokenIndex]->getAddress(), $this->lexicalAnalysis->getSymbolTable());
+                if ($this->tokens[$this->tokenIndex]->getType()->getUid() == Symbol::INTEGER) {
+                    $lineNumber = (int)array_search($this->tokens[$this->tokenIndex]->getAddress(), $this->lexicalAnalysis->getSymbolTable());
+                    $lineColumnInfo = $this->getLineCollumn(); 
+                    $this->gotoTargets[] = ['lineNumber' => $lineNumber, 'lineColumn' => $lineColumnInfo];
                     $this->advanceToken();
                 } else {
                     $this->addError("Número de linha esperado após GOTO." . $this->getLineCollumn());
@@ -232,14 +209,14 @@ class SemanticAnalysis
                 break;
             case Symbol::END:
                 $this->end = true;
-                // Não faz nada.
+                $this->advanceToken();
                 break;
             default:
                 $this->addError("Comando não reconhecido." . $this->getLineCollumn());
                 return false;
         }
 
-        echo sprintf("Expressão semântica %s analisada e válida!", $currentToken->getType()->getUid()) . PHP_EOL;
+        echo $this->isPrint ? sprintf("Expressão semântica %s analisada e válida!", $currentToken->getType()->getUid()) . PHP_EOL : '';
         return true;
     }
 
@@ -352,7 +329,7 @@ class SemanticAnalysis
     private function useVariable($varName): void
     {
         if (!in_array($varName, $this->declaredVariables)) {
-            $this->addError("Variável $varName não foi declarada.");
+            $this->addError("Variável $varName não foi declarada." . $this->getLineCollumn());
         }
     }
 
@@ -362,8 +339,11 @@ class SemanticAnalysis
     private function verifyGotoTargets(): void
     {
         foreach ($this->gotoTargets as $target) {
-            if (!in_array($target, $this->lineNumbers)) {
-                $this->addError("GOTO para linha $target que não existe.");
+            $lineNumber = $target['lineNumber'];
+            $lineColumnInfo = $target['lineColumn'];
+
+            if (!in_array($lineNumber, $this->lineNumbers)) {
+                $this->addError("GOTO para linha $lineNumber que não existe." . $lineColumnInfo);
             }
         }
     }
@@ -379,12 +359,14 @@ class SemanticAnalysis
             $this->addError("Comando 'print' necessita de uma variável." . $this->getLineCollumn());
             return;
         }
-        
-        if (!in_array($varName, $this->declaredVariables) || 
-            !ctype_alpha($varName) || 
-            strlen($varName) != 1 || 
-            ctype_upper($varName) || 
-            is_numeric($varName)) {
+
+        if (
+            !in_array($varName, $this->declaredVariables) ||
+            !ctype_alpha($varName) ||
+            strlen($varName) != 1 ||
+            ctype_upper($varName) ||
+            is_numeric($varName)
+        ) {
 
             $errorMessage = "Erro na variável $varName: ";
 
@@ -437,4 +419,3 @@ class SemanticAnalysis
         $this->error = true;
     }
 }
-?>
