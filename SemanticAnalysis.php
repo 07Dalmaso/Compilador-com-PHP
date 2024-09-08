@@ -2,8 +2,8 @@
 /**
  * Classe para análise semântica de um código baseado em tokens.
  * 
- * Autor: Lucas Santos Dalmaso
- * Email: lucassdalmaso25@gmail.com
+ * Autor: Lucas Santos Dalmaso e André Santoro
+ * Email: lucassdalmaso25@gmail.com e asbnbm00@gmail.com
  */
 require_once 'Lexeme.php';
 require_once 'Symbol.php';
@@ -49,6 +49,18 @@ class SemanticAnalysis
         }
     }
 
+    private function skipToNextLine()
+    {
+        // Advance tokens until you reach a line feed (LF) or end of input
+        while ($this->tokenIndex < count($this->tokens) && $this->tokens[$this->tokenIndex]->getType()->getUid() !== Symbol::LF) {
+            $this->advanceToken();
+        }
+        // If there are line feeds, advance past them as well
+        if ($this->tokenIndex < count($this->tokens) && $this->tokens[$this->tokenIndex]->getType()->getUid() === Symbol::LF) {
+            $this->advanceToken();
+        }
+    }
+
     /**
      * Inicia a análise semântica dos tokens.
      *
@@ -59,28 +71,38 @@ class SemanticAnalysis
         while ($this->tokenIndex < count($this->tokens)) {
             $currentToken = $this->tokens[$this->tokenIndex];
             echo sprintf("Analisando token: %s", $currentToken) . PHP_EOL;
-
+    
+            if ($currentToken->getType()->getUid() === Symbol::ERROR) {
+                echo "Error token found, skipping this line.\n";
+                $this->skipToNextLine();
+                continue; 
+            }
+    
             if ($currentToken->getType()->getUid() == Symbol::END) {
                 $this->end = true;
-                $this->advanceToken(); 
+                $this->advanceToken();
                 break;
             }
+    
             if ($currentToken->getType()->getUid() == Symbol::ETX) {
                 if (!$this->end) {
                     $this->addError("Falta o comando 'END' para o fechamento do código." . $this->getLineCollumn());
                 }
                 break;
             }
-
+          
             // Processar número da linha
             if (!$this->lineNumber($currentToken)) {
-                // break;  // Se erro ocorrer, interromper análise
+                $this->skipToNextLine();  // Skip the line and continue
+                continue;
             }
-
+    
             // Processar comando
             if (!$this->command()) {
-                // break;
+                $this->skipToNextLine();  // Skip the line and continue
+                continue;
             }
+    
             if ($this->tokens[$this->tokenIndex]->getType()->getUid() == Symbol::LF) {
                 $this->advanceToken();
             }

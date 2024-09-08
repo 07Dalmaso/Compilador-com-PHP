@@ -1,7 +1,7 @@
 <?php
 /**
- * Autor: Lucas Santos Dalmaso
- * Email: lucassdalmaso25@gmail.com
+ * Autor: Lucas Santos Dalmaso e André Santoro 
+ * Email: lucassdalmaso25@gmail.com e asbnbm00@gmail.com
  */
 require_once 'Lexeme.php';
 require_once 'Symbol.php';

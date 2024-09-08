@@ -2,7 +2,7 @@
 /**
  * Interface responsável pelas constantes utilizadas na fase de análise
  * Autores: Lucas Santos Dalmaso e André Santoro
- * Email's: lucassdalmaso25@gmail.com e andre
+ * Email's: lucassdalmaso25@gmail.com e asbnbm00@gmail.com
  */
 class Symbol
 {

@@ -2,7 +2,7 @@
 /**
  * Classe responsável pela representação de um lexema
  * Autores: Lucas Santos Dalmaso e André Santoro
- * Email's: lucassdalmaso25@gmail.com e andre
+ * Email's: lucassdalmaso25@gmail.com e asbnbm00@gmail.com
  */
 class Lexeme
 {
