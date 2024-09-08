@@ -3,7 +3,6 @@
  * Autores: Lucas Santos Dalmaso e André Santoro
  * Email's: lucassdalmaso25@gmail.com e asbnbm00@gmail.com
  */
-
 require_once 'LexicalAnalysis.php';
 require_once 'Parser.php';
 require_once 'SemanticAnalysis.php';

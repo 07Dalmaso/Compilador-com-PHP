@@ -90,7 +90,7 @@ class SemanticAnalysis
                 }
                 break;
             }
-    
+          
             // Processar número da linha
             if (!$this->lineNumber($currentToken)) {
                 $this->skipToNextLine();  // Skip the line and continue
@@ -107,9 +107,9 @@ class SemanticAnalysis
                 $this->advanceToken();
             }
         }
-    
+
         $this->verifyGotoTargets();
-    
+
         // Se houver erros, exiba todos eles
         if ($this->error) {
             echo "Erros encontrados durante a análise semântica:" . PHP_EOL;
@@ -122,8 +122,6 @@ class SemanticAnalysis
             return true;
         }
     }
-    
-
 
     /**
      * Processa o número da linha atual.
