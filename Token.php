@@ -1,6 +1,8 @@
 <?php
 /**
  * Classe responsável pela representação de um token
+ * Autores: Lucas Santos Dalmaso e André Santoro
+ * Email's: lucassdalmaso25@gmail.com e asbnbm00@gmail.com
  */
 class Token
 {
