@@ -11,6 +11,8 @@ class Compiler {
     public static function main() {
 
         $counter = 1;
+        // Caso desja ver o passo a passo é só colocar true
+        $isPrint = false;
 
         echo '<pre>';
         echo "=== Início da análise léxica ===\n";
@@ -22,22 +24,31 @@ class Compiler {
 
         # Análise Léxica
         if ($lexical->parser($arquivo)) {
-            echo "\nTabela de Símbolos:\n";
-            foreach ($lexical->getSymbolTable() as $key => $value) {
-                echo $value . " : " . $key . "\n";
-            }
+            if($isPrint){
 
-            echo "\nTokens Gerados:\n";
-            foreach ($lexical->getTokens() as $token) {
-                echo $counter . ": " . $token . "\n";
-                $counter++;
-            }
+                echo "\nTabela de Símbolos:\n";
+                foreach ($lexical->getSymbolTable() as $key => $value) {
+                    echo $value . " : " . $key . "\n";
+                }
+                
+                echo "\nTokens Gerados:\n";
+                foreach ($lexical->getTokens() as $token) {
+                    echo $counter . ": " . $token . "\n";
+                    $counter++;
+                }
+            } 
+            echo "Análise léxica concluída com sucesso.\n";
+        } else {
+                echo "Erro durante a análise léxica.\n";
+        }
+            
+        echo "=== Fim da análise semântica ===\n";
 
             # Análise Sintática
             echo "\n=== Início da análise sintática (Parsing) ===\n";
 
             $tokens = $lexical->getTokens(); 
-            $parser = new Parser($tokens);
+            $parser = new Parser($tokens, $isPrint);
 
             try {
                 $parser->parseProgram(); 
@@ -45,10 +56,11 @@ class Compiler {
             } catch (Exception $e) {
                 echo $e->getMessage() . "\n";
             }
+            echo "=== Fim da análise sintática (Parsing) ===\n";
 
             # Análise Semântica
             echo "\n=== Início da análise semântica ===\n";
-            $semanticAnalysis = new SemanticAnalysis($lexical);
+            $semanticAnalysis = new SemanticAnalysis($lexical, $isPrint);
             if($semanticAnalysis->analyze()){
                 echo "Análise semântica concluída com sucesso.\n";
             } else {
@@ -56,9 +68,6 @@ class Compiler {
             }
             echo "=== Fim da análise semântica ===\n";
 
-        } else {
-            echo "Erro durante a análise léxica.\n";
-        }
 
         echo '</pre>';
     }
