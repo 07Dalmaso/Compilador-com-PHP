@@ -11,7 +11,7 @@ class Compiler {
     public static function main() {
 
         $counter = 1;
-        // Caso desja ver o passo a passo é só colocar true
+        # Caso deseja ver o passo a passo é só colocar true
         $isPrint = false;
 
         echo '<pre>';

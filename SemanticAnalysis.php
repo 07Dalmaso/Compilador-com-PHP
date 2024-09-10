@@ -39,6 +39,18 @@ class SemanticAnalysis
         $this->isPrint = $isPrint;
     }
 
+    private function skipToNextLine()
+    {
+        echo $this->isPrint ? "Pulando para a próxima linha...\n" : '';
+        while ($this->tokenIndex < count($this->tokens) && $this->tokens[$this->tokenIndex]->getType()->getUid() != Symbol::LF) {
+            $this->advanceToken();
+        }
+
+        if ($this->tokenIndex < count($this->tokens) && $this->tokens[$this->tokenIndex]->getType()->getUid() == Symbol::LF) {
+            $this->advanceToken();
+        }
+    }
+
     /**
      * Avança o índice do token atual.
      */
@@ -59,7 +71,10 @@ class SemanticAnalysis
      */
     public function analyze()
     {
-        while ($this->tokenIndex < count($this->tokens)) {
+        while (
+            $this->tokenIndex < count($this->tokens) &&
+            $this->tokens[$this->tokenIndex]->getType()->getUid() != Symbol::END
+        ) {
             $currentToken = $this->tokens[$this->tokenIndex];
             echo $this->isPrint ? sprintf("Analisando token: %s", $currentToken) . PHP_EOL : NULL;
 
@@ -150,6 +165,11 @@ class SemanticAnalysis
                 $this->advanceToken();
                 $this->declareVariable(array_search($this->tokens[$this->tokenIndex]->getAddress(), $this->lexicalAnalysis->getSymbolTable()));
                 $this->advanceToken();
+                while ($this->tokenIndex < count($this->tokens) && $this->tokens[$this->tokenIndex]->getType()->getUid() != Symbol::LF) {
+                    $this->advanceToken();
+                    $this->addError("o 'input' só aceita uma variável." . $this->getLineCollumn());
+                }
+
                 break;
             case Symbol::LET:
                 $this->advanceToken();
@@ -162,10 +182,20 @@ class SemanticAnalysis
                         $this->expression();
                     }
                 }
+                while ($this->tokenIndex < count($this->tokens) && $this->tokens[$this->tokenIndex]->getType()->getUid() != Symbol::LF) {
+                    $this->advanceToken();
+                    $this->addError("'Token' inseperado na condição 'let'." . $this->getLineCollumn());
+                }
                 break;
             case Symbol::IF:
                 $this->advanceToken();
                 $this->condition();
+                if($this->tokens[$this->tokenIndex]->getType()->getUid() == Symbol::LF){
+                    $this->addError("Esperado GOTO após condição." . $this->getLineCollumn());
+                    return false;
+                    break;
+                }
+
                 if (
                     $this->tokenIndex < count($this->tokens) &&
                     $this->tokens[$this->tokenIndex]->getType()->getUid() == Symbol::GOTO
@@ -202,9 +232,13 @@ class SemanticAnalysis
                 break;
             case Symbol::PRINT:
                 $this->advanceToken();
-                if ($this->tokenIndex < count($this->tokens)) {
+                // if ($this->tokenIndex < count($this->tokens)) {
                     $this->useVariablePrint(array_search($this->tokens[$this->tokenIndex]->getAddress(), $this->lexicalAnalysis->getSymbolTable()));
                     $this->advanceToken();
+                // }
+                while ($this->tokenIndex < count($this->tokens) && $this->tokens[$this->tokenIndex]->getType()->getUid() != Symbol::LF) {
+                    $this->advanceToken();
+                    $this->addError("o 'print' só aceita uma variável." . $this->getLineCollumn());
                 }
                 break;
             case Symbol::END:
@@ -212,7 +246,12 @@ class SemanticAnalysis
                 $this->advanceToken();
                 break;
             default:
-                $this->addError("Comando não reconhecido." . $this->getLineCollumn());
+                // $this->addError("Comando não reconhecido, são válidos os comandos: input, print, if, goto, let e rem." . $this->getLineCollumn());
+                
+                while ($this->tokenIndex < count($this->tokens) && $this->tokens[$this->tokenIndex]->getType()->getUid() != Symbol::LF) {
+                    $this->advanceToken();
+                }
+
                 return false;
         }
 
@@ -276,9 +315,10 @@ class SemanticAnalysis
             $this->advanceToken();
         } elseif ($currentToken->getType()->getUid() == Symbol::INTEGER) {
             $this->advanceToken();
-        } else {
-            $this->addError("Token inesperado no fator da expressão: " . $currentToken->getType()->getUid());
-        }
+        } 
+        // else {
+        //     $this->addError("Token inesperado no fator da expressão: " . $currentToken->getType()->getUid());
+        // }
     }
 
     /**
@@ -289,6 +329,13 @@ class SemanticAnalysis
         $this->expression();
         $this->relationalOperator(); // Operador de comparação
         $this->expression(); // Segunda expressão
+
+        while ($this->tokenIndex < count($this->tokens) && $this->tokens[$this->tokenIndex]->getType()->getUid() != Symbol::GOTO) {
+            $this->advanceToken();
+            if($this->tokens[$this->tokenIndex]->getType()->getUid() == Symbol::LF){
+                break;
+            }
+        }
     }
 
     /**

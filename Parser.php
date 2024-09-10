@@ -87,7 +87,7 @@ class Parser
     private function throwError($message)
     {
         $currentToken = $this->getCurrentToken();
-        $errorLocation = " na linha " . $currentToken->getLine() . ", coluna " . $currentToken->getColumn();
+        $errorLocation = " (Linha " . $currentToken->getLine() . ", coluna " . $currentToken->getColumn(). ")";
         $fullMessage = "Erro: $message" . $errorLocation;
 
         echo $fullMessage . "\n";
@@ -201,7 +201,11 @@ class Parser
                 return;
 
             default:
-                $this->throwError("Declaração inesperada.");
+            $this->throwError("Comando não reconhecido, são válidos os comandos: input, print, if, goto, let e rem.");
+            while ($this->currentIndex < count($this->tokens) && $this->tokens[$this->currentIndex]->getType()->getUid() != Symbol::LF) {
+                $this->advanceToken();
+            }
+
         }
     }
 
@@ -257,6 +261,16 @@ class Parser
             echo $this->isPrint ? "Analisando declaração 'if'.\n" : '';
             $this->advanceToken();
             $this->parseC();
+            
+            while($this->currentIndex < count($this->tokens)){
+                if(
+                    $this->getCurrentToken()->getType()->getUid() == Symbol::GOTO ||
+                    $this->getCurrentToken()->getType()->getUid() == Symbol::LF
+                ){
+                    break;
+                }
+                    $this->advanceToken();
+            }
 
             if ($this->getCurrentToken()->getType()->getUid() == Symbol::GOTO) {
                 echo $this->isPrint ? "'goto' encontrado após condição 'if'.\n" : '';
