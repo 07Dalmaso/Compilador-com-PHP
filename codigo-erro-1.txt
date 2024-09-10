@@ -1,0 +1,14 @@
+10 input n
+15 if n > 0 goto 30
+20 let m = -1
+25 goto 65
+30 let s = 0
+35 let i = 1
+40 if i > n goto 60
+45 let s = s + i
+49 rem 50 let i = i + 1
+50 i = i + 1
+55 goto 40
+60 let m = s / n
+65 print m
+70 end

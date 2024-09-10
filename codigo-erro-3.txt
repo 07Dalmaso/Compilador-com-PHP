@@ -1,0 +1,12 @@
+10 input n
+15 if n <= 0 goto 50
+20 let y = 1
+25 print y
+30 let n = n - 1
+35 if n == 0 goto 60
+39 rem 40 let y = y + 2
+40 let y = y + 2 * n
+45 goto 25
+50 let y = -1
+55 print y
+60 end
