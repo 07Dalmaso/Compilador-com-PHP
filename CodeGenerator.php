@@ -373,10 +373,10 @@ var_dump($this->constantsAddresses);
             case Symbol::GT: // '>'
                 // BRANCHNEG para pular se negativo
                 $this->addInstruction(4100);
-                $this->flags[$this->instructionCounter - 1] = $this->instructionCounter + 4;
+                $this->flags[$this->instructionCounter - 1] = -($this->instructionCounter + 2);
                 // BRANCHZERO para pular se zero
                 $this->addInstruction(4200);
-                $this->flags[$this->instructionCounter - 1] = $this->instructionCounter + 3;
+                $this->flags[$this->instructionCounter - 1] = -($this->instructionCounter + 1);
                 // BRANCH targetAddress
                 $this->addInstruction(4000);
                 $this->flags[$this->instructionCounter - 1] = $targetLine;
@@ -394,7 +394,7 @@ var_dump($this->constantsAddresses);
             case Symbol::GE: // '>='
                 // BRANCHNEG para pular se negativo
                 $this->addInstruction(4100);
-                $this->flags[$this->instructionCounter - 1] = $this->instructionCounter + 3;
+                $this->flags[$this->instructionCounter - 1] = - ($this->instructionCounter + 1);
                 // BRANCH targetAddress
                 $this->addInstruction(4000);
                 $this->flags[$this->instructionCounter - 1] = $targetLine;
