@@ -1,20 +1,14 @@
-01 rem Verificar se o numero eh primo
-02 rem input  7 output  1
-03 rem input  8 output  0
-04 rem input -5 output -1
-10 input a
-15 if a <= 0 goto 55
-20 if a == 1 goto 65
-25 let n = a - 1
-30 if n == 1 goto 75
-35 let r = a % n
-40 if r == 0 goto 65
-45 let n = n - 1
-50 goto 30
-55 let x = -1
-60 goto 80
-65 let x = 0
-70 goto 80
-75 let x = 1
-80 print x
-85 end
+10 input n
+15 if n <= 0 goto 65
+20 let y = 0
+25 let k = 0
+30 if k >= n goto 75
+35 let a = 2 * k
+40 let b = a + 1
+45 let y = y + b
+50 print y
+55 let k = k + 1
+60 goto 30
+65 let y = -1
+70 print y
+75 end
