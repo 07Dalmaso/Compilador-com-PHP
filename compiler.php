@@ -7,6 +7,7 @@ require_once 'CodeGenerator.php';
 require_once 'LexicalAnalysis.php';
 require_once 'Parser.php';
 require_once 'SemanticAnalysis.php';
+require_once 'SymbolTable.php';
 
 class Compiler {
     public static function main() {
@@ -64,16 +65,21 @@ class Compiler {
 
         # Code Generation
         echo "\n=== Início da geração de código (SML) ===\n";
-        $symbolTable = $lexical->getSymbolTable();
-        $codeGenerator = new CodeGenerator($tokens, $symbolTable);
+        $symbolTable = new SymbolTable();
+        $symbolTable1 = $lexical->getSymbolTable();
+        $invertedSymbolTable = array_flip($symbolTable1);
+        
+        $codeGenerator = new CodeGenerator($tokens, $symbolTable, $invertedSymbolTable);
         $smlCode = $codeGenerator->generateCode();
 
-        // echo "\nCódigo SML Gerado:\n";
-        // foreach ($smlCode as $line) {
-        //     echo $line . "\n";
-        // }
+        // Exibir o código SML
+        echo "\nCódigo SML Gerado:\n";
+        foreach ($smlCode as $instruction) {
+            $sign = ($instruction >= 0) ? "+" : "-";
+            $absInstruction = abs($instruction);
+            echo sprintf("%s%04d\n", $sign, $absInstruction);
+        }
         echo "=== Fim da geração de código (SML) ===\n";
-        echo '</pre>';
     }
 }
 

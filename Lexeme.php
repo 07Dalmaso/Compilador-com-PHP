@@ -27,6 +27,11 @@ class Lexeme
     public $column;
 
     /**
+     * Número da coluna no código-fonte
+     */
+    public $value;
+
+    /**
      * Construtor para inicializar o lexema
      *
      * @param string $character caractere lido do código-fonte
@@ -34,12 +39,13 @@ class Lexeme
      * @param int $line número da linha no código-fonte
      * @param int $column número da coluna no código-fonte
      */
-    public function __construct(string $character, Symbol $type, int $line, int $column)
+    public function __construct(string $character, Symbol $type, int $line, int $column, $value)
     {
         $this->term = $character;
         $this->type = $type;
         $this->line = $line;
         $this->column = $column;
+        $this->value = $value;
     }
 
     /**
@@ -91,7 +97,7 @@ class Lexeme
      */
     public function toToken(): Token
     {
-        return new Token($this->type, $this->line, $this->column);
+        return new Token($this->type, $this->line, $this->column, $this->value);
     }
 
     /**
@@ -102,7 +108,7 @@ class Lexeme
      */
     public function toTokenWithAddress(int $address): Token
     {
-        return new Token($this->type, $this->line, $this->column, $address);
+        return new Token($this->type, $this->line, $this->column, $this->value, $address);
     }
 }
 ?>
