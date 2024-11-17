@@ -26,6 +26,12 @@ class Token
      */
     private $column;
 
+
+    /**
+     * Número da coluna no código-fonte
+     */
+    private $value;
+
     /**
      * Construtor para inicializar o token - sem tabela de símbolo
      *
@@ -33,12 +39,13 @@ class Token
      * @param int $line número da linha no código-fonte
      * @param int $column número da coluna no código-fonte
      */
-    public function __construct(Symbol $type, int $line, int $column, int $address = -1)
+    public function __construct(Symbol $type, int $line, int $column, $value,  int $address = -1)
     {
         $this->type = $type;
         $this->address = $address;
         $this->line = $line;
         $this->column = $column;
+        $this->value = $value;
     }
 
     /**
@@ -59,6 +66,16 @@ class Token
     public function getAddress(): int
     {
         return $this->address;
+    }
+
+    /**
+     * Retornar o endereço na tabela de símbolos
+     *
+     * @return int endereço na tabela de símbolos
+     */
+    public function getValue()
+    {
+        return $this->value;
     }
 
     /**

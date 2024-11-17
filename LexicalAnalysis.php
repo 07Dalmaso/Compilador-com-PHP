@@ -16,6 +16,7 @@ class LexicalAnalysis
     private $error;
     private $lexeme;
     private $line;
+    private $value;
     private $source;
     private $symbolTable;
     private $tokens;
@@ -27,6 +28,7 @@ class LexicalAnalysis
         $this->error = false;
         $this->symbolTable = [];
         $this->tokens = [];
+        $this->value = NULL;
     }
 
     private function addSymbolTable($lexeme)
@@ -99,6 +101,15 @@ class LexicalAnalysis
         return !$this->error;
     }
 
+    private function peek()
+    {
+        $position = ftell($this->source);
+        $character = fgetc($this->source);
+        fseek($this->source, $position);
+        return $character !== false ? $character : "\0";
+    }
+
+
     /**
      * Estado inicial do automato finito deterministico
      */
@@ -125,7 +136,7 @@ class LexicalAnalysis
             case '7':
             case '8':
             case '9':
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column, $this->value);
                 $this->q01();
                 break;
             case 'a':
@@ -148,71 +159,78 @@ class LexicalAnalysis
             case 'x':
             case 'y':
             case 'z':
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q02();
                 break;
             case 'r':
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q14();
                 break;
             case 'i':
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q16();
                 break;
             case 'l':
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q20();
                 break;
             case 'p':
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q22();
                 break;
             case 'g':
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q26();
                 break;
             case 'e':
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q29();
                 break;
             case '+':
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
-            case '-':
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column);
-                $this->q05();
+                case '-':
+                    $nextChar = $this->peek();
+                    if (ctype_digit($nextChar)) {
+                        $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column, $this->value);
+                        $this->q01(); // Continuar construindo o número inteiro negativo
+                    } else {
+                        $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column, $this->value);
+                        $this->q05();
+                    }
+                    break;
                 break;
             case '*':
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '/':
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '%':
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '=':
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column, $this->value);
                 $this->q06();
                 break;
             case '<':
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column, $this->value);
                 $this->q07();
                 break;
             case '>':
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column, $this->value);
                 $this->q08();
                 break;
             case '!':
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column, $this->value);
                 $this->q13();
                 break;
             default:
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column, $this->value);
                 $this->q99();
         }
     }
@@ -251,47 +269,47 @@ class LexicalAnalysis
                 break;
             case '+':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '-':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '*':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '/':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '%':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '=':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column, $this->value);
                 $this->q06();
                 break;
             case '<':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column, $this->value);
                 $this->q07();
                 break;
             case '>':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column, $this->value);
                 $this->q08();
                 break;
             case '!':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column, $this->value);
                 $this->q13();
                 break;
             default:
@@ -321,47 +339,47 @@ class LexicalAnalysis
                 break;
             case '+':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '-':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '*':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '/':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '%':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '=':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column, $this->value);
                 $this->q06();
                 break;
             case '<':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column, $this->value);
                 $this->q07();
                 break;
             case '>':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column, $this->value);
                 $this->q08();
                 break;
             case '!':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column, $this->value);
                 $this->q13();
                 break;
             default:
@@ -375,7 +393,7 @@ class LexicalAnalysis
      */
     private function q03()
     {
-        $this->lexeme = new Lexeme('\n', Symbol::fromUid(Symbol::LF), $this->line, $this->column);
+        $this->lexeme = new Lexeme('\n', Symbol::fromUid(Symbol::LF), $this->line, $this->column, $this->value);
 
         $this->addToken();
 
@@ -389,7 +407,7 @@ class LexicalAnalysis
      */
     private function q04()
     {
-        $this->lexeme = new Lexeme('\0', Symbol::fromUid(Symbol::ETX), $this->line, $this->column);
+        $this->lexeme = new Lexeme('\0', Symbol::fromUid(Symbol::ETX), $this->line, $this->column, $this->value);
 
         $this->addToken();
     }
@@ -429,7 +447,7 @@ class LexicalAnalysis
             case '8':
             case '9':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column, $this->value);
                 $this->q01();
                 break;
             case 'a':
@@ -453,37 +471,37 @@ class LexicalAnalysis
             case 'y':
             case 'z':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q02();
                 break;
             case 'r':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q14();
                 break;
             case 'i':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q16();
                 break;
             case 'l':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q20();
                 break;
             case 'p':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q22();
                 break;
             case 'g':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q26();
                 break;
             case 'e':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q29();
                 break;
             default:
@@ -522,7 +540,7 @@ class LexicalAnalysis
             case '8':
             case '9':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column, $this->value);
                 $this->q01();
                 break;
             case 'a':
@@ -546,37 +564,37 @@ class LexicalAnalysis
             case 'y':
             case 'z':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q02();
                 break;
             case 'r':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q14();
                 break;
             case 'i':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q16();
                 break;
             case 'l':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q20();
                 break;
             case 'p':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q22();
                 break;
             case 'g':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q26();
                 break;
             case 'e':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q29();
                 break;
             case '=':
@@ -620,7 +638,7 @@ class LexicalAnalysis
             case '8':
             case '9':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column, $this->value);
                 $this->q01();
                 break;
             case 'a':
@@ -644,37 +662,37 @@ class LexicalAnalysis
             case 'y':
             case 'z':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q02();
                 break;
             case 'r':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q14();
                 break;
             case 'i':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q16();
                 break;
             case 'l':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q20();
                 break;
             case 'p':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q22();
                 break;
             case 'g':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q26();
                 break;
             case 'e':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q29();
                 break;
             case '=':
@@ -718,7 +736,7 @@ class LexicalAnalysis
             case '8':
             case '9':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column, $this->value);
                 $this->q01();
                 break;
             case 'a':
@@ -742,37 +760,37 @@ class LexicalAnalysis
             case 'y':
             case 'z':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q02();
                 break;
             case 'r':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q14();
                 break;
             case 'i':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q16();
                 break;
             case 'l':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q20();
                 break;
             case 'p':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q22();
                 break;
             case 'g':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q26();
                 break;
             case 'e':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q29();
                 break;
             case '=':
@@ -816,7 +834,7 @@ class LexicalAnalysis
             case '8':
             case '9':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column, $this->value);
                 $this->q01();
                 break;
             case 'a':
@@ -840,37 +858,37 @@ class LexicalAnalysis
             case 'y':
             case 'z':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q02();
                 break;
             case 'r':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q14();
                 break;
             case 'i':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q16();
                 break;
             case 'l':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q20();
                 break;
             case 'p':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q22();
                 break;
             case 'g':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q26();
                 break;
             case 'e':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q29();
                 break;
             default:
@@ -910,7 +928,7 @@ class LexicalAnalysis
             case '8':
             case '9':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column, $this->value);
                 $this->q01();
                 break;
             case 'a':
@@ -934,37 +952,37 @@ class LexicalAnalysis
             case 'y':
             case 'z':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q02();
                 break;
             case 'r':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q14();
                 break;
             case 'i':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q16();
                 break;
             case 'l':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q20();
                 break;
             case 'p':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q22();
                 break;
             case 'g':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q26();
                 break;
             case 'e':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q29();
                 break;
             default:
@@ -1004,7 +1022,7 @@ class LexicalAnalysis
             case '8':
             case '9':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column, $this->value);
                 $this->q01();
                 break;
             case 'a':
@@ -1028,37 +1046,37 @@ class LexicalAnalysis
             case 'y':
             case 'z':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q02();
                 break;
             case 'r':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q14();
                 break;
             case 'i':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q16();
                 break;
             case 'l':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q20();
                 break;
             case 'p':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q22();
                 break;
             case 'g':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q26();
                 break;
             case 'e':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q29();
                 break;
             default:
@@ -1098,7 +1116,7 @@ class LexicalAnalysis
             case '8':
             case '9':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column, $this->value);
                 $this->q01();
                 break;
             case 'a':
@@ -1122,37 +1140,37 @@ class LexicalAnalysis
             case 'y':
             case 'z':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q02();
                 break;
             case 'r':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q14();
                 break;
             case 'i':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q16();
                 break;
             case 'l':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q20();
                 break;
             case 'p':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q22();
                 break;
             case 'g':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q26();
                 break;
             case 'e':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q29();
                 break;
             default:
@@ -1212,47 +1230,47 @@ class LexicalAnalysis
                 break;
             case '+':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '-':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '*':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '/':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '%':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '=':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column, $this->value);
                 $this->q06();
                 break;
             case '<':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column, $this->value);
                 $this->q07();
                 break;
             case '>':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column, $this->value);
                 $this->q08();
                 break;
             case '!':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column, $this->value);
                 $this->q13();
                 break;
             case 'e':
@@ -1315,47 +1333,47 @@ class LexicalAnalysis
                 break;
             case '+':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '-':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '*':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '/':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '%':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '=':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column, $this->value);
                 $this->q06();
                 break;
             case '<':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column, $this->value);
                 $this->q07();
                 break;
             case '>':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column, $this->value);
                 $this->q08();
                 break;
             case '!':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column, $this->value);
                 $this->q13();
                 break;
             case 'f':
@@ -1480,47 +1498,47 @@ class LexicalAnalysis
                 break;
             case '+':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '-':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '*':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '/':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '%':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '=':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column, $this->value);
                 $this->q06();
                 break;
             case '<':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column, $this->value);
                 $this->q07();
                 break;
             case '>':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column, $this->value);
                 $this->q08();
                 break;
             case '!':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column, $this->value);
                 $this->q13();
                 break;
             case 'e':
@@ -1583,47 +1601,47 @@ class LexicalAnalysis
                 break;
             case '+':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '-':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '*':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '/':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '%':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '=':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column, $this->value);
                 $this->q06();
                 break;
             case '<':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column, $this->value);
                 $this->q07();
                 break;
             case '>':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column, $this->value);
                 $this->q08();
                 break;
             case '!':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column, $this->value);
                 $this->q13();
                 break;
             case 'r':
@@ -1745,47 +1763,47 @@ class LexicalAnalysis
                 break;
             case '+':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '-':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '*':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '/':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '%':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '=':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column, $this->value);
                 $this->q06();
                 break;
             case '<':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column, $this->value);
                 $this->q07();
                 break;
             case '>':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column, $this->value);
                 $this->q08();
                 break;
             case '!':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column, $this->value);
                 $this->q13();
                 break;
             case 'o':
@@ -1878,47 +1896,47 @@ class LexicalAnalysis
                 break;
             case '+':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '-':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '*':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '/':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '%':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '=':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column, $this->value);
                 $this->q06();
                 break;
             case '<':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column, $this->value);
                 $this->q07();
                 break;
             case '>':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column, $this->value);
                 $this->q08();
                 break;
             case '!':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column, $this->value);
                 $this->q13();
                 break;
             case 'n':
@@ -2038,7 +2056,7 @@ class LexicalAnalysis
             case '8':
             case '9':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::INTEGER), $this->line, $this->column, $this->value);
                 $this->q01();
                 break;
             case 'a':
@@ -2062,82 +2080,82 @@ class LexicalAnalysis
             case 'y':
             case 'z':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q02();
                 break;
             case 'r':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q14();
                 break;
             case 'i':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q16();
                 break;
             case 'l':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q20();
                 break;
             case 'p':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q22();
                 break;
             case 'g':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q26();
                 break;
             case 'e':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::VARIABLE), $this->line, $this->column, $this->value);
                 $this->q29();
                 break;
             case '+':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ADD), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '-':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::SUBTRACT), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '*':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MULTIPLY), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '/':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::DIVIDE), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '%':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::MODULO), $this->line, $this->column, $this->value);
                 $this->q05();
                 break;
             case '=':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ASSIGNMENT), $this->line, $this->column, $this->value);
                 $this->q06();
                 break;
             case '<':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::LT), $this->line, $this->column, $this->value);
                 $this->q07();
                 break;
             case '>':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::GT), $this->line, $this->column, $this->value);
                 $this->q08();
                 break;
             case '!':
                 $this->addToken();
-                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column);
+                $this->lexeme = new Lexeme($character, Symbol::fromUid(Symbol::ERROR), $this->line, $this->column, $this->value);
                 $this->q13();
                 break;
             default:
