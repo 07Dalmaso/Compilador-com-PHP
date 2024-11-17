@@ -1,17 +1,17 @@
-01 rem Minimo multiplo comum entre dois numeros
-02 rem input 12 input 45 output 180
-03 rem input -5          output  -1
-10 input a
-15 if a <= 0 goto 65
-20 input b
-25 if b <= 0 goto 65
-30 let p = a * b
-35 let r = a % b
-40 let a = b
-45 let b = r
-50 if r != 0 goto 35
-55 let x = p / a
-60 goto 70
-65 let x = -1
-70 print x
+01 rem Somatoria dos termos da serie de Fibonacci
+02 rem input  5 output 12
+03 rem input -5 output -1
+10 input n
+15 if n <= 0 goto 65
+20 let a = 0
+25 let b = 1
+30 let s = 0
+35 if n == 0 goto 70
+40 let s = s + b
+45 let b = b + a
+50 let a = b - a
+55 let n = n - 1
+60 goto 35
+65 let s = -1
+70 print s
 75 end

@@ -1,14 +1,17 @@
-10 input n
-15 if n <= 0 goto 65
-20 let y = 0
-25 let k = 0
-30 if k >= n goto 75
-35 let a = 2 * k
-40 let b = a + 1
-45 let y = y + b
-50 print y
-55 let k = k + 1
-60 goto 30
-65 let y = -1
-70 print y
+01 rem Minimo multiplo comum entre dois numeros
+02 rem input 12 input 45 output 180
+03 rem input -5          output  -1
+10 input a
+15 if a <= 0 goto 65
+20 input b
+25 if b <= 0 goto 65
+30 let p = a * b
+35 let r = a % b
+40 let a = b
+45 let b = r
+50 if r != 0 goto 35
+55 let x = p / a
+60 goto 70
+65 let x = -1
+70 print x
 75 end
