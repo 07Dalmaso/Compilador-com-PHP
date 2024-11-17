@@ -72,13 +72,20 @@ class Compiler {
         $codeGenerator = new CodeGenerator($tokens, $symbolTable, $invertedSymbolTable);
         $smlCode = $codeGenerator->generateCode();
 
-        // Exibir o código SML
+        $outputFile = fopen('binary.txt', 'w');
+
         echo "\nCódigo SML Gerado:\n";
         foreach ($smlCode as $instruction) {
             $sign = ($instruction >= 0) ? "+" : "-";
             $absInstruction = abs($instruction);
-            echo sprintf("%s%04d\n", $sign, $absInstruction);
+            $formattedInstruction = sprintf("%s%04d", $sign, $absInstruction);
+
+            echo $formattedInstruction . "\n";
+
+            fwrite($outputFile, $formattedInstruction . "\n");
         }
+        fclose($outputFile);
+
         echo "=== Fim da geração de código (SML) ===\n";
     }
 }
